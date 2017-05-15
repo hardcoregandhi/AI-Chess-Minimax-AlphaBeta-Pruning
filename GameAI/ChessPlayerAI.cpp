@@ -10,55 +10,10 @@ ChessPlayerAI::ChessPlayerAI(SDL_Renderer * renderer, COLOUR colour, Board * boa
 	futureWhoseMove = COLOUR_BLACK;
 	currentMoveNumber = 0;
 	
-	/*TODO
-	*/
 }
 
 ChessPlayerAI::~ChessPlayerAI()
 {
-}
-
-void ChessPlayerAI::createTree(TreeNode* _node)
-{
-	COLOUR teamToSearchFor;
-	if (_node->teamColour == COLOUR_WHITE)
-		teamToSearchFor = COLOUR_BLACK;
-	else if (_node->teamColour == COLOUR_BLACK)
-		teamToSearchFor = COLOUR_WHITE;
-
-	vector<Move> *possibleMoves = new vector<Move>;
-	GetAllMoveOptions(_node->board, teamToSearchFor, possibleMoves);
-	_node->board = CalcBoardFitness(_node->board);// = _node->possibleMoves->size();
-	Board tempCurrentBoard;
-	tempCurrentBoard.score = -1;
-	//Create new boards for each possible move - Layer 1
-	for each (Move move in *possibleMoves)
-	{
-		tempCurrentBoard = _node->board;
-		Board newBoard = createBoardFromMove(tempCurrentBoard, move);
-		//if (move.from_X == 1 &&
-		//	move.from_Y == 4 && 
-		//	move.to_X == 2 && 
-		//	move.to_Y == 5)
-		//{
-		//	cout << endl;
-		//}
-		newBoard = CalcBoardFitness(newBoard);
-		TreeNode* newNode = new TreeNode(_node, newBoard);
-		newNode->layer = _node->layer + 1;
-		newNode->actualMoveTaken = move;
-		newNode->teamColour = teamToSearchFor;
-		//cout << "NEW NODE :: " << MoveManager::Instance()->ConvertBoardPositionIntToLetter(newNode->actualMoveTaken.from_X) << newNode->actualMoveTaken.from_Y
-		//	<< MoveManager::Instance()->ConvertBoardPositionIntToLetter(newNode->actualMoveTaken.to_X) << newNode->actualMoveTaken.to_Y << endl;
-		//cout << "NODE SCORE :: " << newNode->board.score;
-
-		_node->childTurns.push_back(newNode);
-		if (newNode->layer < *searchDepth)
-		{
-			createTree(newNode);
-		}
-	}
-	delete possibleMoves;
 }
 
 Board ChessPlayerAI::createBoardFromMove(Board _board, Move _move)
@@ -77,176 +32,6 @@ Board ChessPlayerAI::createBoardFromMove(Board _board, Move _move)
 	tempBoard.currentLayout[(int)_move.from_X][(int)_move.from_Y] = BoardPiece();
 
 	return tempBoard;
-}
-
-int ChessPlayerAI::minimax(TreeNode* nextTurn, int depth)
-{
-	//REMINDER need to create the tree first
-	int alpha = 0;
-	if (depth == 0)
-	{
-		//if (nextTurn->board.score > 0)
-		//	cout << "FOUND ONE, SCORE OF " << nextTurn->board.score << endl;
-		return nextTurn->board.score;
-	}
-	//if this is opponents move
-	if(futureWhoseMove == COLOUR_WHITE)
-	{
-		futureWhoseMove = COLOUR_BLACK;
-		// Return value of minimum-valued child node       
-		alpha = MaxInt;
-		for each (TreeNode* nextNextTurn in nextTurn->childTurns)
-		{
-			int minimaxReturn = minimax(nextNextTurn, depth - 1);
-			if (alpha > minimaxReturn)
-			{
-				alpha = minimaxReturn;
-			}
-		}
-	}
-	//else if this is our move
-	else if(futureWhoseMove == COLOUR_BLACK)
-	{
-		futureWhoseMove = COLOUR_WHITE;
-		// Return value of maximum-valued child node  
-		alpha = -MaxInt;
-		for each (TreeNode* nextNextTurn in nextTurn->childTurns)
-		{
-			int minimaxReturn = minimax(nextNextTurn, depth - 1);
-			if (alpha < minimaxReturn)
-			{
-				alpha = minimaxReturn;
-				if (depth == *searchDepth)
-					bestMoveNode = nextNextTurn;
-			}
-		}
-	}
-
-	return alpha;
-}
-
-int ChessPlayerAI::minimaxAlphaBeta(Board nextTurn, int depth, int parentHigh, int parentLow)
-{
-	int alpha = 0;
-	int beta = 0;
-	if (depth == 0)
-	{
-		//if (nextTurn->board.score > 0)
-		//	cout << "FOUND ONE, SCORE OF " << nextTurn->board.score << endl;
-		return nextTurn.score;
-	}
-	//if this is opponents move
-	if (futureWhoseMove == COLOUR_WHITE)
-	{
-		futureWhoseMove = COLOUR_BLACK;
-		vector<Move> *possibleMoves = new vector<Move>;
-		GetAllMoveOptions(nextTurn, COLOUR_WHITE, possibleMoves);
-		// Return value of minimum-valued child node       
-		int a = MaxInt;
-		for each (Move nextNextTurn in *possibleMoves)
-		{
-			Board newBoard;
-			newBoard = createBoardFromMove(newBoard, nextNextTurn);
-			newBoard = CalcBoardFitness(newBoard);
-			int minimaxReturn = minimaxAlphaBeta(newBoard, depth - 1, MaxInt, a);
-			if (a > minimaxReturn)
-			{
-				a = minimaxReturn;
-
-				if (depth == *searchDepth)
-					bestMove = nextNextTurn;
-			}
-			if (a < alpha)
-				return a;
-		}
-	}
-	//else if this is our move
-	else if (futureWhoseMove == COLOUR_BLACK)
-	{
-		futureWhoseMove = COLOUR_WHITE;
-		vector<Move> *possibleMoves = new vector<Move>;
-		GetAllMoveOptions(nextTurn, COLOUR_BLACK, possibleMoves);
-		// Return value of maximum-valued child node       
-		int a = -MaxInt;
-		for each (Move nextNextTurn in *possibleMoves)
-		{
-			Board newBoard = createBoardFromMove(nextTurn, nextNextTurn);
-			newBoard = CalcBoardFitness(newBoard);
-			if (nextNextTurn.from_X == 1 &&
-				nextNextTurn.from_Y == 4 &&
-				nextNextTurn.to_X == 2 &&
-				nextNextTurn.to_Y == 5)
-			{
-				cout << endl;
-			}
-			int minimaxReturn = minimaxAlphaBeta(newBoard, depth - 1, a, -MaxInt);
-			if (a < minimaxReturn)
-			{
-				a = minimaxReturn;
-
-				if (depth == *searchDepth)
-					bestMove = nextNextTurn;
-			}
-			if (a > beta)
-				return a;
-		}
-	}
-
-	return alpha;
-}
-
-int ChessPlayerAI::maximum(Board nextTurn, int depth, int alpha, int beta)
-{
-	//REMINDER need to create the tree first
-	if (depth == 0)
-	{
-		return nextTurn.score;
-	}
-	vector<Move> *possibleMoves = new vector<Move>;
-	GetAllMoveOptions(nextTurn, COLOUR_BLACK, possibleMoves);
-	for each(Move mv in *possibleMoves)
-	{
-		Board newBoard = createBoardFromMove(nextTurn, mv);
-		newBoard = CalcBoardFitness(newBoard);
-		int oldAlpha = alpha;
-		alpha = max(alpha, minimum(newBoard, depth - 1, alpha, beta));
-		if (oldAlpha != alpha)
-		{
-			if (depth == *searchDepth)
-			{
-				bestMove = mv;
-			}
-		}
-		if (alpha >= beta)
-		{
-			//cout << "Shortcut Found" << endl;
-			return alpha;
-		}
-	}
-	return beta;
-}
-
-int ChessPlayerAI::minimum(Board nextTurn, int depth, int alpha, int beta)
-{
-	//REMINDER need to create the tree first
-	if (depth == 0)
-	{
-		return nextTurn.score;
-	}
-	vector<Move> *possibleMoves = new vector<Move>;
-	GetAllMoveOptions(nextTurn, COLOUR_WHITE, possibleMoves);
-	for each(Move mv in *possibleMoves)
-	{
-		Board newBoard = createBoardFromMove(nextTurn, mv);
-		newBoard = CalcBoardFitness(newBoard);
-		beta = min(beta, maximum(newBoard, depth - 1, alpha, beta));
-		if (beta <= alpha)
-		{
-			//cout << "Shortcut Found" << endl;
-			return alpha;
-		}
-	}
-	return beta;
 }
 
 Board ChessPlayerAI::CalcBoardFitness(Board board)
@@ -268,6 +53,8 @@ Board ChessPlayerAI::CalcBoardFitness(Board board)
 	int wBishopCount = 0;
 	int wKingCount = 0;
 	
+
+	//CENTRAL BOARD CONTROL
 	//for (int x = 3; x < 5; x++)
 	//{
 	//	for (int y = 3; y < 5; y++)
@@ -378,6 +165,7 @@ Board ChessPlayerAI::CalcBoardFitness(Board board)
 					break;
 
 				case PIECE_BISHOP:
+					//DIAGONAL BOARD CONTROL
 					//GetDiagonalMoveOptions(piecePosition, currentPiece, board, possibleBlackBishopMoves);
 					//scoreBlack += kBishopCoverage * possibleBlackBishopMoves->size();
 					scoreBlack += kPieceWorthBishop * kMaterialWeight;
@@ -390,6 +178,7 @@ Board ChessPlayerAI::CalcBoardFitness(Board board)
 					break;
 
 				case PIECE_QUEEN:
+					//QUEENS BOARD CONTROL
 					//GetDiagonalMoveOptions(piecePosition, currentPiece, board, possibleBlackQueenMoves);
 					//GetHorizontalAndVerticalMoveOptions(piecePosition, currentPiece, board, possibleBlackQueenMoves);
 					//scoreBlack += kQueenCoverage * possibleBlackQueenMoves->size();
@@ -480,6 +269,7 @@ Board ChessPlayerAI::CalcBoardFitness(Board board)
 	if (CheckForCheckmate(board, COLOUR_BLACK))
 		scoreWhite += 1000000;
 
+	//MOVE POTENTIAL
 	//vector<Move>* moves = new vector<Move>;
 	//GetAllMoveOptions(board, COLOUR_BLACK, moves);
 	//scoreBlack = scoreBlack + (0.1 * moves->size());
@@ -488,6 +278,8 @@ Board ChessPlayerAI::CalcBoardFitness(Board board)
 	//GetAllMoveOptions(board, COLOUR_WHITE, moves);
 	//scoreWhite = scoreWhite + (0.1 * moves->size());
 
+
+	//DEBUG
 	//cout << "BlackCount : " << endl;
 	//cout << "	bPawnCount : " << bPawnCount << endl;
 	//cout << "	bKnightCount : " << bKnightCount << endl;
@@ -553,7 +345,7 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 		return true;
 	}
 
-	//AlphaBetaPruning another attempt
+	//AlphaBetaPruning
 	Board temp = *mChessBoard;
 
 	bool inClosingStage = false;
@@ -563,6 +355,8 @@ bool ChessPlayerAI::TakeATurn(SDL_Event e)
 	bestMove = Move();
 	int alpha = MaximumAlphaBetaPruning(temp, *searchDepth, -MaxInt);
 	//cout << alpha << endl;
+
+	//Fail catch
 	if (alpha == -2147483647)
 	{
 		cout << "Possible Move available" << endl;
@@ -625,7 +419,6 @@ int ChessPlayerAI::MaximumAlphaBetaPruning(Board node, int depth, int parentLow)
 		{
 			Board newBoard = createBoardFromMove(node, child);
 			alpha = max(alpha, MinimumAlphaBetaPruning(newBoard, depth - 1, alpha));
-			//alpha = MinimumAlphaBetaPruning(newBoard, depth - 1, alpha);
 			if (alpha > parentLow)
 			{
 				parentLow = alpha;
@@ -779,48 +572,6 @@ void ChessPlayerAI::EndTurn()
 	//Make all current player's pawns unavailable for en'passant. Opponent had their chance.
 	ClearEnPassant();
 
-}
-
-void ChessPlayerAI::deleteTree(TreeNode* _node)
-{
-	for each (TreeNode* node in _node->childTurns)
-	{
-		deleteTree(node);
-	}
-	delete _node;
-}
-
-Move ChessPlayerAI::getMove(int minimaxReturn)
-{
-
-
-	//float moveScore = 0;
-	//Move highestScoringMove;
-
-	//for each (TreeNode* nextTurn in root->childTurns)
-	//{
-	//	if (nextTurn->board.score > moveScore)
-	//	{
-	//		moveScore = nextTurn->board.score;
-	//		highestScoringMove = nextTurn->actualMoveTaken;
-	//	}
-	//}
-
-	////CATCHALL
-	//if (moveScore = 0)
-	//{
-	//	highestScoringMove = root->childTurns[0]->actualMoveTaken;
-	//}
-
-	return bestMove;
-}
-
-Move ChessPlayerAI::treeGetMove()
-{
-	while (bestMoveNode->parentNode != root)
-		bestMoveNode = bestMoveNode->parentNode;
-
-	return bestMoveNode->actualMoveTaken;
 }
 
 bool ChessPlayerAI::MakeAMove(Move _move)
